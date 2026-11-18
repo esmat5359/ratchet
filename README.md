@@ -212,6 +212,23 @@ exactly the right articles, `tier = max(floor, touched tiers)`, thresholds follo
 and bounties route to the wei, money is conserved, and **a failed consensus changes nothing**.
 The challenge scenarios are outcome-aware: whichever way the AI goes, the money must follow.
 
+### What the first live Studionet run showed
+
+* **Consensus:** all 9 AI transactions (8 `classify`, 1 `challenge`) reached consensus on the first attempt; the exact-equality rule did not make
+  the happy path fragile. Under the real LLM the strict reading flagged the explicitly named A3 (S4) and also flagged the "spend any amount on any
+  purpose" motion (S5), so the *raise* branch of the challenge game was not reached live (it is covered offline); S5b exercised the *upheld* branch
+  with exact money routing.
+* **Reverted payable calls keep their value on Studionet** (3 reverted calls left 0.012 GEN + 1 wei in the contract). The run now measures this
+  baseline, proves it equals exactly the value attached to the reverted calls, and attributes it per account.
+* **Contract-to-EOA transfers were not credited to the recipients** within 30+ minutes even though the withdraw transactions finalized and the
+  contract's own balance fell exactly as books required. The contract side is correct; run `npm run diagnose:payout` (see below) to learn which
+  `emit_transfer` delivery mode the network honours.
+
+### Payout probe
+
+`tools/PayoutProbe.py` + `scripts/diagnose_payout.mjs` emit the same tiny transfer three ways (funded account `on="accepted"`, funded account
+`on="finalized"`, never-seen address `on="accepted"`) and print who actually gets credited. `node scripts/diagnose_payout.mjs --sim` dry-runs it.
+
 ### Local dry run
 
 `node scripts/e2e.mjs --sim` runs the **same script** against `scripts/sim_bridge.py`, which executes the real
