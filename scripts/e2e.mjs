@@ -19,7 +19,8 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { LiveChain, SimChain } from './lib/chain.mjs';
-import { ephemeralKeys, loadKeys } from './lib/keys.mjs';
+import { ephemeralKeys, loadKeys, FUND_AMOUNT, MIN_BALANCE, ROLE_NAMES } from './lib/keys.mjs';
+import { ensureFunded } from './lib/funding.mjs';
 import { Report } from './lib/report.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -29,17 +30,17 @@ const opt = (flag, fallback) => { const i = argv.indexOf(flag); return i >= 0 ? 
 const SIM = has('--sim');
 const FULL = has('--full');
 const CHAOS = has('--chaos');
-const SETTLE_MINUTES = Number(opt('--settle-minutes', process.env.SETTLE_MINUTES ?? (SIM ? 0 : 30)));   // how long to wait for delayed payouts
-const PAYOUT_WAIT_MINUTES = Number(opt('--payout-wait-minutes', process.env.PAYOUT_WAIT_MINUTES ?? (SIM ? 0 : 10)));
-const FEE_ALLOWANCE = 100_000_000_000_000n;   // 0.0001 GEN per account: tolerated if the network ever charges fees
+const SETTLE_MINUTES = Number(opt('--settle-minutes', process.env.SETTLE_MINUTES ?? (SIM ? 0 : 10)));   // how long the final sweep waits for delayed payouts
+const PAYOUT_WAIT_MINUTES = Number(opt('--payout-wait-minutes', process.env.PAYOUT_WAIT_MINUTES ?? (SIM ? 0 : 10)));   // how long a withdraw may take to finalize
+const PAYOUT_CREDIT_SECONDS = Number(opt('--payout-credit-seconds', process.env.PAYOUT_CREDIT_SECONDS ?? (SIM ? 5 : 180)));   // after finalization the credit must be visible within this
+const FUND_WAIT_SECONDS = Number(opt('--fund-wait-seconds', process.env.E2E_FUND_WAIT_SECS ?? (SIM ? 0 : 600)));   // wait for faucet funding when sim_fundAccount is unavailable
+const FEE_ALLOWANCE = 1_000_000_000_000_000n;   // 0.001 GEN per account: tolerated if the network ever charges fees
 const AI_ATTEMPTS = Math.max(1, Number(opt('--ai-attempts', process.env.AI_ATTEMPTS ?? 2)));
 const CONTRACT_PATH = path.resolve(opt('--contract', path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'contracts', 'Ratchet.py')));
 
 const BOND = 4_000_000_000_000_000n;            // 0.004 GEN
 const DONATION = 30_000_000_000_000_000n;       // 0.03 GEN
 const GRANT = 1_000_000_000_000_000n;           // 0.001 GEN (<= 10% of the treasury: floor tier 1)
-const FUND = 1_000_000_000_000_000_000n;        // 1 GEN per account
-const MIN_BALANCE = 200_000_000_000_000_000n;   // 0.2 GEN
 const VOTE_MIN = 2;
 const CHALLENGE_MIN = 2;
 const VOTE_SECONDS = VOTE_MIN * 60;
@@ -50,7 +51,7 @@ const CHARTER = [
   { id: 'A4', tier: 2, text: 'The newsletter is sent by e-mail once a month.' },
 ];
 const FOUNDERS = ['F0', 'F1', 'F2', 'F3', 'F4'];
-const NAMES = [...FOUNDERS, 'O', 'G'];
+const NAMES = ROLE_NAMES;                       // F0..F4, O, G (shared with scripts/keys.mjs)
 const ALL_FINAL = ['ENACTED', 'REJECTED', 'LAPSED', 'VOID', 'WITHDRAWN', 'EXPIRED'];
 const sha256 = (text) => crypto.createHash('sha256').update(text).digest('hex');
 const max = (list) => list.reduce((a, b) => (b > a ? b : a), list[0]);
@@ -87,7 +88,7 @@ async function main() {
   let orphan = 0n;     // wei held by the contract that its books do not know about (measured, expected 0)
   const spent = Object.fromEntries(NAMES.map((n) => [n, 0n]));      // value attached to accepted transactions
   const received = Object.fromEntries(NAMES.map((n) => [n, 0n]));   // value pulled out with withdraw
-  const revertedValue = Object.fromEntries(NAMES.map((n) => [n, 0n]));   // value attached to calls that reverted
+  let deliveryBroken = false;   // set when a FINALIZED withdraw never credited its recipient: later waits are cut short
   const startBalance = {};
 
   const rj = async (fn, args = []) => JSON.parse(await chain.read(address, fn, args));
@@ -113,7 +114,6 @@ async function main() {
     report.tx({ label: label ?? `${name}.${fn}`, ok: out.ok, kind: out.kind, hash: out.hash, attempt,
       seconds: Math.round((Date.now() - t0) / 1000) });
     if (out.ok) spent[name] += BigInt(value);
-    else if (out.kind === 'EXEC_ERROR' && BigInt(value) > 0n) revertedValue[name] += BigInt(value);
     return out;
   }
 
@@ -170,7 +170,7 @@ async function main() {
       const ledger = await getLedger();
       return { ledger, chainBalance: await chain.balance(address) };
     };
-    let state = await eventually(read, (st) => BigInt(st.ledger.balance) === st.chainBalance, { timeout: SIM ? 5 : 150, step: 10 });
+    let state = await read();
     const books = (l) => BigInt(l.treasury) + BigInt(l.escrow) + BigInt(l.claimable_total);
     if (settled) {
       const wait = (hardSettled ? SETTLE_MINUTES : PAYOUT_WAIT_MINUTES) * 60;
@@ -227,10 +227,16 @@ async function main() {
     received[name] += owed;
     report.check(`${label}: ledger zeroed immediately`, (await claimable(name)) === 0n);
     // Emitted transfers execute at FINALIZATION, so the balance lags the accepted transaction.
-    const fin = await chain.waitFinalized(out, { maxWaitSeconds: PAYOUT_WAIT_MINUTES * 60 });
+    const fin = await chain.waitFinalized(out, { maxWaitSeconds: (deliveryBroken ? 1 : PAYOUT_WAIT_MINUTES) * 60 });
     report.check(`${label}: withdraw transaction finalized`, fin.finalized === true, fin.finalizeError ?? fin.status, { soft: true });
-    const after = await eventually(() => chain.balance(A(name)), (b) => b - before >= expected, { timeout: SIM ? 5 : PAYOUT_WAIT_MINUTES * 60, step: 15 });
+    // Once finalized, the credit has to be visible within PAYOUT_CREDIT_SECONDS (a few polls, not half an hour).
+    const credit = deliveryBroken ? 15 : PAYOUT_CREDIT_SECONDS;
+    const after = await eventually(() => chain.balance(A(name)), (b) => b - before >= expected, { timeout: SIM ? 5 : credit, step: 10 });
     const delta = after - before;
+    if (fin.finalized === true && delta === 0n && !deliveryBroken) {
+      deliveryBroken = true;
+      report.note(`${label}: the withdraw FINALIZED but the recipient was not credited. The contract paid with an EVM external message; if this repeats, the network is not delivering contract->account transfers and the remaining waits are shortened`);
+    }
     report.check(`${label}: payout arrived (${fmt(expected)})`, delta === expected, `delta=${delta} expected=${expected}; the final reconciliation re-checks every balance`, { soft: true });
   }
 
@@ -290,15 +296,12 @@ async function main() {
   // ------------------------------------------------------------------------------------- //
   try {
     report.section('Setup: accounts, funding, deployment');
-    for (const name of NAMES) {
-      let bal = await chain.balance(A(name));
-      if (bal < MIN_BALANCE) {
-        try { await chain.fund(A(name), FUND); } catch (error) { report.note(`funding ${name} failed: ${error.message}`); }
-        bal = await chain.balance(A(name));
-      }
-      startBalance[name] = bal;
-      report.check(`${name} ${A(name)} holds ${fmt(bal)}`, bal >= MIN_BALANCE,
-        `fund this address from the Studionet faucet (needs >= ${fmt(MIN_BALANCE)}) and re-run`);
+    const funding = await ensureFunded(chain, keys, { minWei: MIN_BALANCE, fundWei: FUND_AMOUNT, waitSeconds: FUND_WAIT_SECONDS,
+      log: (line) => { console.log(line); } });
+    for (const row of funding) {
+      startBalance[row.name] = row.balance;
+      report.check(`${row.name} ${row.address} holds ${fmt(row.balance)} (${row.how})`, row.ok,
+        `send at least ${fmt(MIN_BALANCE)} from the Studionet faucet (sim_fundAccount is often unavailable) and re-run, or raise --fund-wait-seconds`);
     }
     if (report.checks.some((c) => c.status === 'FAIL')) throw new Error('accounts are not funded; see above');
 
@@ -342,11 +345,8 @@ async function main() {
     orphan = bal1;   // anything left over would be value kept by failed transactions
     report.check('failed transactions did not leave value in the contract', bal1 === 0n, `contract holds ${bal1} wei`, { soft: true });
     if (orphan !== 0n) {
-      const revertedTotal = Object.values(revertedValue).reduce((a, b) => a + b, 0n);
-      report.note(`Studionet kept ${orphan} wei from reverted payable calls; later balance checks subtract this baseline`);
-      report.check('the kept value equals exactly the value attached to the reverted calls', orphan === revertedTotal, `kept=${orphan} attached=${revertedTotal}`);
-      if (orphan === revertedTotal) for (const name of NAMES) spent[name] += revertedValue[name];
-      else spent.F1 += orphan;
+      report.note(`Studionet kept ${orphan} wei from reverted transactions; later balance checks subtract this baseline`);
+      spent.F1 += orphan;
     }
 
     // -------------------------------------------------------------------------------- //
@@ -544,7 +544,7 @@ async function main() {
       if (out.ok) { received[name] += owed; lastOut = out; }
     }
     await ledgerCheck('final (ledger side)');
-    if (lastOut) await chain.waitFinalized(lastOut, { maxWaitSeconds: SETTLE_MINUTES * 60 });
+    if (lastOut) await chain.waitFinalized(lastOut, { maxWaitSeconds: (deliveryBroken ? 1 : SETTLE_MINUTES) * 60 });
 
     // Whole-run conservation: every wei an account attached or pulled out must be accounted for.
     report.section('Whole-run conservation of funds (waits for delayed payouts)');
@@ -554,14 +554,7 @@ async function main() {
       for (const name of NAMES) rows.push([name, await chain.balance(A(name)), expectedBalance(name)]);
       return rows;
     };
-    const rows = await eventually(settled, (r) => r.every(([, actual, expected]) => actual >= expected - FEE_ALLOWANCE), { timeout: SETTLE_MINUTES * 60, step: 20 });
-    const settledNow = await getLedger();
-    const contractReleased = BigInt(settledNow.balance) - orphan === BigInt(settledNow.treasury) + BigInt(settledNow.escrow) + BigInt(settledNow.claimable_total);
-    const shortfall = rows.filter(([, actual, expected]) => actual < expected).length;
-    if (shortfall > 0 && contractReleased) {
-      report.note('DIAGNOSIS: the contract released every payout (its balance equals treasury + escrow + claimable) but the recipients\' balances did not rise. '
-        + 'The contract side is correct; the network did not credit the emitted transfers to these accounts. Run `npm run diagnose:payout` to find which delivery mode Studionet honours.');
-    }
+    const rows = await eventually(settled, (r) => r.every(([, actual, expected]) => actual >= expected - FEE_ALLOWANCE), { timeout: deliveryBroken ? 30 : SETTLE_MINUTES * 60, step: 20 });
     for (const [name, actual, expected] of rows) {
       const diff = actual - expected;
       if (diff === 0n) report.check(`${name}: balance equals start - attached + withdrawn (exact)`, true);

@@ -4,7 +4,8 @@
 #   bash run.sh                 setup + lint + offline tests + mutation tests + live e2e on Studionet
 #   bash run.sh --fast          skip the (slow) mutation suites
 #   bash run.sh --offline       everything except the live network run (uses the local sim bridge instead)
-#   bash run.sh --live-only     only deploy to Studionet and run the live e2e (assumes setup already done)
+#   bash run.sh --live-only     only deploy to Studionet and run the live e2e (assumes setup already done;
+#                               accounts must be funded: npm run keys -- --fund --wait 600)
 #   bash run.sh --full          add the expiry scenario to the live run
 #
 # Pinned toolchain (GenVM v0.2.16 stable): genlayer-test 0.29.2, genvm-linter 0.11.0, genlayer-js 1.1.8.
@@ -18,7 +19,7 @@ for arg in "$@"; do
     --offline) OFFLINE=1 ;;
     --live-only) LIVE_ONLY=1 ;;
     --full) FULL=1 ;;
-    -h|--help) sed -n 2,11p "$0"; exit 0 ;;
+    -h|--help) sed -n 2,12p "$0"; exit 0 ;;
     *) echo "unknown option: $arg" >&2; exit 2 ;;
   esac
 done
@@ -28,7 +29,7 @@ need() { command -v "$1" >/dev/null 2>&1 || { echo "missing required tool: $1" >
 
 need python3; need node; need npm
 PYV=$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])')
-case "$PYV" in 3.12|3.13) ;; *) echo "Python 3.12+ required (found $PYV)" >&2; exit 1 ;; esac
+case "$PYV" in 3.12|3.13|3.14) ;; *) echo "Python 3.12+ required (found $PYV)" >&2; exit 1 ;; esac
 NODEV=$(node -p 'process.versions.node.split(".")[0]')
 [ "$NODEV" -ge 20 ] || { echo "Node 20+ required (found $(node -v))" >&2; exit 1; }
 
