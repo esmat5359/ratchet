@@ -1,28 +1,28 @@
 # RATCHET live end-to-end report
 
-* mode: **sim (local Direct Mode bridge, real contract code)**   * network: simulated
-* contract: `0xdd562bc3fabecfda1a7bc086c7509192a98477f0`
-* source sha256: `6cf9e6d74fac37372ff2273b2bbe5165441d3cde0107b5a1320ddac1f77d345f`
-* started: 2026-11-18T19:48:22.491Z   * duration: 11 s
-* **269 passed, 8 failed, 1 warnings** (278 checks, 75 transactions)
+* mode: **live**   * network: https://studio.genlayer.com/api
+* contract: `0xA0a4fB98Da65a8e43B7b8bccb8431FEebEd0AEEe`
+* source sha256: `b7618b552d782c1bcb16ecfd98e87e2363c3c7e3f9facb287061ddeb7fed332a`
+* started: 2026-11-21T08:17:53.220Z   * duration: 2584 s
+* **260 passed, 0 failed, 1 warnings** (261 checks, 73 transactions)
 
 ## Setup: accounts, funding, deployment
 
-- ✔ F0 0xa2c9e7d3a2bf667c603dfe7f00ce554e254c22ce holds 1 GEN (funded by sim_fundAccount)
-- ✔ F1 0xd15c7ba67b3141abc5d2144cb514f84d59514913 holds 1 GEN (funded by sim_fundAccount)
-- ✔ F2 0xb56d59c986ac7d794f611fd073e5b9080ad466a3 holds 1 GEN (funded by sim_fundAccount)
-- ✔ F3 0x25156ca99144e43b21aadd2aceeaf7108af3f02f holds 1 GEN (funded by sim_fundAccount)
-- ✔ F4 0x4f3dac22a9f650cef33487b97b5d614bed4c69ea holds 1 GEN (funded by sim_fundAccount)
-- ✔ O 0x6c4e5d289d9b67f1aefc8c47b334b55b7c24ac41 holds 1 GEN (funded by sim_fundAccount)
-- ✔ G 0xe84c543cdeb1962fd90502b90070629cf4031263 holds 1 GEN (funded by sim_fundAccount)
+- ✔ F0 0x217588cb7eff5c61b1965bbed8b0779262bd4606 holds 0.22 GEN (already funded)
+- ✔ F1 0x5e03aecc7aa70c333982badede3498ea52630289 holds 0.122 GEN (already funded)
+- ✔ F2 0xbf418943b95cd2e463b674ead56714b65cd4a0e3 holds 0.098 GEN (already funded)
+- ✔ F3 0x478940f07f5bbbb83aec9e69876717dcf97f28ee holds 0.13 GEN (already funded)
+- ✔ F4 0xd084047b2fc3b05bfc693c1b0b29fcc8f5fa33f3 holds 0.126 GEN (already funded)
+- ✔ O 0x8b76b91c73a9818fe6236f6d4210a6a9a5c1bab2 holds 0.126 GEN (already funded)
+- ✔ G 0x787f3ad650ab9bfb012d28841b83f9136e4f4662 holds 0.131 GEN (already funded)
 - ✔ deployment accepted
 - ✔ deployed contract address found in the receipt
 - ✔ deployed source is byte-identical to contracts/Ratchet.py
-- · contract 0xdd562bc3fabecfda1a7bc086c7509192a98477f0
+- · contract 0xA0a4fB98Da65a8e43B7b8bccb8431FEebEd0AEEe
 
 | tx | result | hash | s |
 |---|---|---|---|
-| F0.deploy | ok | `0x95340b1961d6e9b9175f1621ca7285dc8dbbde54aa5756876d1c2df063368cfc` | 0 |
+| F0.deploy | ok | `0xf86ead555752edc542c735dd7e48663debd081afeca73e1a7670343cf407eeb2` | 15 |
 
 ## S0  Baseline reads
 
@@ -46,14 +46,18 @@
 - ✔ classify by F2 reverts
 - ✔   revert reason mentions "motion not found"
 - ✔ no motion was created by the failed attempts
-- ✔ failed transactions did not leave value in the contract
+- ⚠ failed transactions did not leave value in the contract — contract holds 12000000000000001 wei
+- ✔ every wei left by failed transactions was attributed to its sender
+- · Studionet kept 4000000000000000 wei of the reverted O.file_amendment; charged to O in the final conservation check
+- · Studionet kept 4000000000000001 wei of the reverted F1.file_amendment; charged to F1 in the final conservation check
+- · Studionet kept 4000000000000000 wei of the reverted F1.file_amendment; charged to F1 in the final conservation check
 
 | tx | result | hash | s |
 |---|---|---|---|
-| O.file_amendment (must revert) | EXEC_ERROR | `0xbdc5e820a03b4eca0572020685aa9ed9441e9ef99ea9685bb848f56a0e111f82` | 0 |
-| F1.file_amendment (must revert) | EXEC_ERROR | `0x58aaefd082f891d851b20d6237c0b8ff8738d0573798659f4da2f8d9b859edef` | 0 |
-| F1.file_amendment (must revert) | EXEC_ERROR | `0x29c1550790d755c4fb6bf6f0aae9d126bdcfb144ecff4af502447a98f025e8dd` | 0 |
-| F2.classify (must revert) | EXEC_ERROR | `0x4722d59bf9d4c9ee5b8609b69b9dddfca7cb2a61de85751c6ebc675ac1439e7f` | 0 |
+| O.file_amendment (must revert) | EXEC_ERROR | `0x28b05343d8e16abadc78000df6e6d79fbbc951d83e81df3cf17e53c7babc86a5` | 15 |
+| F1.file_amendment (must revert) | EXEC_ERROR | `0x3c7edcef6048848917127615d767a1f24a3b4cf1777b5470da89603916f28498` | 15 |
+| F1.file_amendment (must revert) | EXEC_ERROR | `0xf5ca788bfc882aa43b4774f3d0845abff536d77db49eecb90604a30adb45f847` | 15 |
+| F2.classify (must revert) | EXEC_ERROR | `0x3d00614f2a81c19a93f4472826f2235e51fe29d2f633e8d0419498f916cc3e7d` | 30 |
 
 ## S2  Treasury donation and bond withdrawal
 
@@ -70,9 +74,9 @@
 
 | tx | result | hash | s |
 |---|---|---|---|
-| F2.donate | ok | `0xdddb6e236c8a9679364b15c8c9ee293540e7bf0c25ca697d1e24b58e6af4265a` | 0 |
-| F1.file_amendment | ok | `0x22fe305e8fe64dc1d5555192bd8a9ba15e6128810398a95b78368bf219910b85` | 0 |
-| F1.withdraw_motion | ok | `0x0166d5468757a8c7937182d1ef58a244851f84a800a205a416cbc2a18cfee064` | 0 |
+| F2.donate | ok | `0xb6382452de12c98246a46e15b5e11d5add0a2f469bc5ea9ccbdb174caffba8e9` | 30 |
+| F1.file_amendment | ok | `0x9c90c6fe012de24ba1c12e235ae814909e1fef8485ad090ab19de355e0af75b4` | 14 |
+| F1.withdraw_motion | ok | `0xc1b4be47265e9d0eccb25910683eba574e879cf39f68dc1f2497ab5357e15e52` | 29 |
 
 ## S3  Happy path: adopt an article (AI strict reading, unanimous vote)
 
@@ -109,20 +113,20 @@
 - ✔ after F1 payout: pull-payment total equals the sum of member balances
 - ✔ after F1 payout: books fully settled (balance == treasury + escrow + claimable)
 - · AI (strict) touched [] -> tier 1
-- · waiting for chain time 1793534540 (challenge window)
+- · waiting for chain time 1795249628 (challenge window)
 
 | tx | result | hash | s |
 |---|---|---|---|
-| F1.file_amendment | ok | `0x03bb3630eca5132d6cf0282ab808d29a2464bbbfb0bb126545f94d9eb4d9e33d` | 0 |
-| F2.classify | ok | `0x49a2ce886498421612d7a85e8ab45c4a26305dc8c761a049ae765bdfcc7a7e68` | 0 |
-| F0.vote(yes) | ok | `0x91505f5d504ab1528bddee21aec9b17f84203d0c3bedeb0b0c4097c5d2d09451` | 0 |
-| F1.vote(yes) | ok | `0x7d684fa42716786e6d6fb83af979064fe4d2de3fd0cdb94e12276e0634165741` | 0 |
-| F2.vote(yes) | ok | `0x601bd20f21c05c858d08ee8cc265f7b932e118ba3c57cae503ab94e559590a17` | 0 |
-| F3.vote(yes) | ok | `0xb37e3c99207a86e42b4793ed3a21e644770abb0be841eb2914e963a0280ed58a` | 0 |
-| F4.vote(yes) | ok | `0xbfb5ebe0303252d8db42cfc97a1146d8d04b254dd961fa0d3cbfc5358f365f0d` | 0 |
-| F3.close_vote | ok | `0xdb98dd9fd98766ae3061901bee2e97021c1b7d59af0df109c371da325fc882be` | 0 |
-| F4.finalize | ok | `0xccd61908661c6fc093805c835b581786d58198e2b1fac06e0805b1988c289cd2` | 0 |
-| F1.withdraw | ok | `0x051b192e4e9ba9b6cc789a4930f714a9e5c3e102152f3f63a5eb414819f4885a` | 0 |
+| F1.file_amendment | ok | `0x499c88d3826e969651c41884cd8dc2f31a7e6329adffef5b499c5a267022abea` | 14 |
+| F2.classify | ok | `0x0504f5960a10fe826edaef24808536aec1dd05c0b2e07b63367880a1993ba46f` | 29 |
+| F0.vote(yes) | ok | `0x3adcf9ca5c7599683e35b9c147dc326c881a08cc41434c35957d3394acc5006c` | 64 |
+| F1.vote(yes) | ok | `0x20f009344e70617a315c4995356e829731200171d0bff41a17ef253e66602d21` | 66 |
+| F2.vote(yes) | ok | `0x11a0db4050c02fbe4551067114f6c81cb53ddd467ad7a9f32dfaad8884d2b0cf` | 69 |
+| F3.vote(yes) | ok | `0x96b00ff76fe1a154ed8a9db000c31e5b98fe4eb58c9b3f2e7793f33af829f47c` | 71 |
+| F4.vote(yes) | ok | `0x727411a4f8a065ef8a29a51afbf6e7e1960b2cd61fab06668ed48aaaae703853` | 74 |
+| F3.close_vote | ok | `0x609246102e124e223be722921600ac3d4b11c8f89788cbf5d57271eec9380e0f` | 15 |
+| F4.finalize | ok | `0x123305fc8ea20fab1f4c30283774a7a4a9ae136397c54e7ef4071488b50aa2dd` | 13 |
+| F1.withdraw | ok | `0xde26aa47ed98dbaf22e6d410a7e4f8c2ff3dc013f99ce7e58935a8ca7d325184` | 29 |
 
 ## S4  Threshold boundary with an AI-derived tier
 
@@ -150,14 +154,14 @@
 
 | tx | result | hash | s |
 |---|---|---|---|
-| F2.file_amendment | ok | `0x07de50c30b01af7079e866772758a3b033bb09cfb122e144b61929e346665ce4` | 0 |
-| F3.classify | ok | `0x218dab678ed25fcde9ba9b3051d7f0a9d668014fa12ce0c306b6da324e79a973` | 0 |
-| F0.vote(yes) | ok | `0x0811fdb354a408eb41b755022d4b3a8a09aca0c1a51c623afba50d31cc86c31e` | 0 |
-| F1.vote(yes) | ok | `0xff7bedf0a37aa95943b756eca7ccc5a77d6e85fbeea69480134f53e05f931612` | 0 |
-| F2.vote(yes) | ok | `0x70e2f7e3a031cbea7022e8d82fda400a4802f9a40229584a6a9d25bca6bfc4e4` | 0 |
-| F3.vote(no) | ok | `0x58265688e971700bd5147a675ac42f71818b78947b958f0c8bcb049c6d29889d` | 0 |
-| F4.vote(no) | ok | `0xdd6d25f15da72d42107b6196e1d86b5ad95ee4fb7c23c62a0a9289f68b563251` | 0 |
-| F0.close_vote | ok | `0x44f431f602913df0ca7c08ad45da4b8e87458349066bc41a9d4c9db32e5b98e5` | 0 |
+| F2.file_amendment | ok | `0x54a180d32746320368c9bfa97c1dbd87da9da9ef668d79e57789a0996143d69a` | 14 |
+| F3.classify | ok | `0x185c205b7728e98da8636411f7945cbb07be357040c583e997ce0e9e2f3e8245` | 29 |
+| F0.vote(yes) | ok | `0x935529d72deb48fff7da49392ce43ef0d5c4309d88c3fc72970d26c76fb53f61` | 64 |
+| F1.vote(yes) | ok | `0x9c2b5d89957be0ce2c0a7748dcf5a7dedc23ae02e3a417973ed56e2796fba9a4` | 67 |
+| F2.vote(yes) | ok | `0x88463fe76d81cfb6c9a7b16427bbbf4cf6e560fba88e4f13a71652fbc4252264` | 69 |
+| F3.vote(no) | ok | `0xcfaea2e42a24326a63a0f68ee63fd11c00e0419643eaa131937be6a8a550e6a9` | 71 |
+| F4.vote(no) | ok | `0x99ad70be61aae79b238c994b67a0a398356dab49c155da01d389b7a4d85fdf13` | 74 |
+| F0.close_vote | ok | `0x2812decaa5586fb6fa0fd6bde975a59a1784eec127ec2232528f38baed851b17` | 30 |
 
 ## S5  The ratchet: challenging a strict reading (stealth motion)
 
@@ -165,7 +169,7 @@
 - ✔ F2 classifies (STRICT reading)
 - ✔ S5 initial: stored touches cover exactly the other articles
 - ✔ S5 initial: every stored touch is a real boolean
-- ✔ S5 initial: tier = max(floor, touched tiers) = 1
+- ✔ S5 initial: tier = max(floor, touched tiers) = 3
 - ✔ S5 initial: reason is stored as free text
 - ✔ F0 vote accepted
 - ✔ F1 vote accepted
@@ -173,44 +177,23 @@
 - ✔ F3 vote accepted
 - ✔ F4 vote accepted
 - ✔ close_vote
-- ✔ F3 challenges (INCLUSIVE reading, bond attached)
-- ✔ S5: exactly one challenge is recorded, by the challenger
-- ✔ S5 after challenge: stored touches cover exactly the other articles
-- ✔ S5 after challenge: every stored touch is a real boolean
-- ✔ S5 after challenge: tier = max(floor, touched tiers) = 3
-- ✔ S5 after challenge: reason is stored as free text
-- ✔ AI expectation: the inclusive reading should see that unrestricted spending bypasses A3
-- ✔ S5 ratchet: no article that was touched before became untouched
-- ✔ S5 ratchet: the tier never went down
-- ✔ S5: raised flag equals (tier after > tier before)
-- ✔ S5 raised: challenger recovers own bond plus half of the proposer's bond
-- ✔ S5 raised: the commons is untouched
-- ✔ S5 raised: half the proposer bond stays in escrow
-- ✔ S5 after challenge: contract is solvent (balance >= books)
-- ✔ S5 after challenge: ledger balance equals the chain balance
-- ✔ S5 after challenge: pull-payment total equals the sum of member balances
-- ✔ finalize right after the challenge (no waiting)
-- ✔ S5: 3 yes votes vs 4 needed at tier 3: motion is REJECTED
-- ✔ S5: proposer bond routing after settlement
+- ✔ S5: motion ended consistently with its tier
 - ✔ after S5: contract is solvent (balance >= books)
 - ✔ after S5: ledger balance equals the chain balance
 - ✔ after S5: pull-payment total equals the sum of member balances
-- · AI (strict) touched [] -> tier 1
-- · AI (inclusive) touched [A3]: tier 1 => 3; challenge RAISED the tier
-- · S5 challenge game: tier raised, motion REJECTED
+- · AI (strict) touched [A3] -> tier 3
+- · S5: the strict reading already required tier 3; the motion ended REJECTED and the challenge path is not exercised here
 
 | tx | result | hash | s |
 |---|---|---|---|
-| F1.file_amendment | ok | `0xb0628f7dad5a08657a653d77c607bd79e4d41377282cd85d5fe9174b24daa17c` | 0 |
-| F2.classify | ok | `0x66d46313b2b9d4c14e9dc209983879718ad22ce5ae431aacd5223a2afba773b6` | 0 |
-| F0.vote(yes) | ok | `0xdb4e2afd76eee26bb0dafed34497dd324467c7a452539e00a2a373b9a69952bb` | 0 |
-| F1.vote(yes) | ok | `0x1a5e72592f76aa1a24154872810526bf7e1d5c61074972ef0755d0972da53a2a` | 0 |
-| F2.vote(yes) | ok | `0x87c8e9594573ee1163ff05764b9e092497c824179e42502996330b7055f07cb8` | 0 |
-| F3.vote(no) | ok | `0x277c51e94eb223d6608ab40e81d0d90e9d24fb637a2cc64a214444de4bab35fc` | 0 |
-| F4.vote(no) | ok | `0x58ce863d9b6ae4ebfef52b94cee5cafff77b500079213194b4738d1930013c2e` | 0 |
-| F2.close_vote | ok | `0xd584e816d821d528b810e657850b7db3386c8cefc8d739e75868e574f47a78d4` | 0 |
-| F3.challenge | ok | `0x00977296695205ae529d78ecd1b319b4999dd7e956a07f2d66f6b3b5191cdf72` | 0 |
-| F4.finalize | ok | `0x1b32e5588b9658d7bede1b9241e5c57fdf4a3d380c4b58298fe9ed8801771596` | 0 |
+| F1.file_amendment | ok | `0xcccac40455ce6d3c8b3a59503f5c13d9bd45d606ba0e30e9c375f52d0e494491` | 14 |
+| F2.classify | ok | `0x35717c3a70af342bd584024ee68098bd8308f2aa2a2bf16a037838cbc14dc31f` | 29 |
+| F0.vote(yes) | ok | `0xfb829c0cc02cbe729297cb17eedd4fe47b94201a897359f0999049092a77c9d5` | 64 |
+| F1.vote(yes) | ok | `0xaf1cbd386de8fb4cd5f064bb157bd42a3c70f57e8aff653663464ef2e1ac9f65` | 67 |
+| F2.vote(yes) | ok | `0x6464990f146f16bb6a924a8e469983c4febc93680c8883f096188267e2f997b6` | 69 |
+| F3.vote(no) | ok | `0x3726cc5ceea7bb67a9253ca45492c4e1c98e291a31ecdfebe6baba6651495708` | 71 |
+| F4.vote(no) | ok | `0x5b835230318a2fe6dd3c09b63268a1777f59ab1d251e97f40b7b9a3b557a1864` | 74 |
+| F2.close_vote | ok | `0xd654507a00bb11d9601c9dd54585f723c96459614d4f15e69e4a6075c9a2a759` | 30 |
 
 ## S5b  A challenge that fails: the challenger forfeits half the bond
 
@@ -254,16 +237,16 @@
 
 | tx | result | hash | s |
 |---|---|---|---|
-| F2.file_amendment | ok | `0x9ee572fb592c47b0d95792b73e7e8001acdd6f163d8030b290aa55864ee07c2e` | 0 |
-| F3.classify | ok | `0x990d58bb258325938e117bbcf8c225b15194071985d12e55d820acf7216aa549` | 0 |
-| F0.vote(yes) | ok | `0xf9eef2f59a2e066cb0f0a9d5b58a0005c4ca711928ab245215cde98e8580967b` | 0 |
-| F1.vote(yes) | ok | `0xd9f2cd1b5d95a22aec3ab444667c8274e73008f0f81e293eebe52ebdd05a47e6` | 0 |
-| F2.vote(yes) | ok | `0x0f314996f102e737c7d197da5d9b3ed6734ca02217085df5a30b03de3ee451e6` | 0 |
-| F3.vote(yes) | ok | `0x8f53555662dd0f68ac06682413ed10aa6abe99fa4f36a940b88b4975cb839116` | 0 |
-| F4.vote(no) | ok | `0x3740ac70fd100642dfc60c756434654c29aac97bf9b9870cb61ecd4c63f5d1de` | 0 |
-| F3.close_vote | ok | `0xa5bcbf57a095d64bf8588ac93b348a355279436bff3782a2e257427e6b310b4b` | 0 |
-| F4.challenge | ok | `0x203851afbdd9feef092c9c850b309ac024b3d7bb007b0e876c9fc56ca4ac981b` | 0 |
-| F0.finalize | ok | `0xc0d01bc7b059262cda3b4fb79782815cac02285fc171a417454c2ef57e0ac631` | 0 |
+| F2.file_amendment | ok | `0x73c4a84256f83351bd82f368fb8a453f7894704e414df01c744712c6f0cfff03` | 14 |
+| F3.classify | ok | `0x2d5555f77fed10b9cb6d167925274d03346d7310b778c636d0fb4ca38be11a70` | 29 |
+| F0.vote(yes) | ok | `0xc69fb9860d4d42de1cd8e1028cc5b78e24232502ed0d04934ee33e809244ede6` | 64 |
+| F1.vote(yes) | ok | `0x618ac9205929deb3bbba7b893009606ae92b86b99e8d6c4dadb076ca13bd3049` | 66 |
+| F2.vote(yes) | ok | `0xfbfc02ce4f090f56fa64d28aba9f608ada54f337bb115e9a571b41c07649be9d` | 69 |
+| F3.vote(yes) | ok | `0x3dc4684d53ca4b7c36c7769650aea5cba586c6f85cb5f7ec731cca5ce94f5586` | 71 |
+| F4.vote(no) | ok | `0xc3116dc8b58a6f4d16a041de7237f61074f41280b9e1d3f4c43d19ad615dd83d` | 74 |
+| F3.close_vote | ok | `0x6716f4734ff22895a0cceda328ad29d29f199fb91f7de2055daeb0038eab2448` | 15 |
+| F4.challenge | ok | `0x269c3b30f0833fb2a2ffd93b249e3248fece8b029ac4a623835d163806b25a60` | 30 |
+| F0.finalize | ok | `0xcd576c065ab40b78550bdfbe6f9e4fb1c16a1b64b08a3dd4857fd0a83de70a96` | 29 |
 
 ## S6  Treasury grant (size raises the floor tier) and payout
 
@@ -283,9 +266,9 @@
 - ✔ close_vote
 - ✔ finalize
 - ✔ grant motion is ENACTED
-- ✘ treasury paid out exactly the grant
+- ✔ treasury paid out exactly the grant
 - ✔ G is owed exactly the grant
-- ✘ after grant: contract is solvent (balance >= books) — balance=54000000000000000 books=55000000000000000
+- ✔ after grant: contract is solvent (balance >= books)
 - ✔ after grant: ledger balance equals the chain balance
 - ✔ after grant: pull-payment total equals the sum of member balances
 - ✔ G payout: ledger owes exactly 0.001 GEN
@@ -293,25 +276,25 @@
 - ✔ G payout: ledger zeroed immediately
 - ✔ G payout: withdraw transaction finalized
 - ✔ G payout: payout arrived (0.001 GEN)
-- ✘ after G payout: contract is solvent (balance >= books) — balance=53000000000000000 books=54000000000000000
+- ✔ after G payout: contract is solvent (balance >= books)
 - ✔ after G payout: ledger balance equals the chain balance
 - ✔ after G payout: pull-payment total equals the sum of member balances
-- ⚠ after G payout: books fully settled (balance == treasury + escrow + claimable) — balance=53000000000000000 books=54000000000000000 (emitted transfers execute at finalization)
+- ✔ after G payout: books fully settled (balance == treasury + escrow + claimable)
 - · AI (strict) touched [] -> tier 1
-- · waiting for chain time 1793534742 (challenge window)
+- · waiting for chain time 1795250714 (challenge window)
 
 | tx | result | hash | s |
 |---|---|---|---|
-| F3.file_grant | ok | `0xcfd2ef9d4424020bab9a1b3fb00fc591ce848d6309fc923fe616d4d2646fbe77` | 0 |
-| F4.classify | ok | `0xfec7161f6f4228ab624daf15f5214e1d1453b5dead5c6f154d7195516ee6e853` | 0 |
-| F0.vote(yes) | ok | `0x2127081197039ea427606793172d077df84ac3d39ed21b8ea9112e98a4b8a982` | 0 |
-| F1.vote(yes) | ok | `0x604149f765b53ac2ac85b494eba4b4f56da60da4530e17c11146004374791515` | 0 |
-| F2.vote(yes) | ok | `0x7460b56ea6e6b8bce9496e487883bca1e8cec25f5d85fd375aeead6666a1bf7a` | 0 |
-| F3.vote(yes) | ok | `0xd8b5247a22b05d473627659d564d5b03ceb905fd9e5e0f63f4594ba2dc6f118f` | 0 |
-| F4.vote(yes) | ok | `0x1da24528afe5f697ae2f1818bf694d47cb3358fffa5f23ac3ab6b72b2547e41e` | 0 |
-| F0.close_vote | ok | `0x50485f9bd334bae89b657bb9f88102fffb2d6d56616540db8ea7e7de851504b1` | 0 |
-| F1.finalize | ok | `0xc8f8a30aa3095b7a2bcb235d84e746f4d2a59588f4be291c2822ae602cbfd099` | 0 |
-| G.withdraw | ok | `0xf79e6558d49cd841266920d202b152f4f9631c5723c4650c868eda71e8df02ad` | 0 |
+| F3.file_grant | ok | `0x959421ef89fa481aa649d6a72d49e871775514364432b11bbe563aaba3341811` | 14 |
+| F4.classify | ok | `0x7e5f7263e7a3976c7c80b0412636b43d5f9c7556ba89656a928e28a3d2b158e5` | 29 |
+| F0.vote(yes) | ok | `0x9a7d28c93abe4683717e873e6b2ef539c47a1a6f3e0d4995adfc7ee5ffab9fda` | 64 |
+| F1.vote(yes) | ok | `0xa818b2f9455662f4147b1bf291143887595ce38a87d2212bd5232ee51be3250b` | 67 |
+| F2.vote(yes) | ok | `0x472d2b1678ffce40a5f84f40b5530e82aa7343b08b2862ef01674174299c140e` | 69 |
+| F3.vote(yes) | ok | `0xf1219320979ed8963553277def345a946416a455fd80b7b1311395fdb6d1e2a0` | 71 |
+| F4.vote(yes) | ok | `0xb48b871ed60fe171dff072a3b1d9ddb90f9d24e05448f329d5479f27575f7e4e` | 74 |
+| F0.close_vote | ok | `0x94859739d97fb737216b28eddb09770407041c9696faff0e5712065141515a6c` | 30 |
+| F1.finalize | ok | `0x64d74592309e9478f3001d9bd49dc860b4da87f7f17fd2377a31ebf7b7118130` | 13 |
+| G.withdraw | ok | `0x610d1a24be442525131547b10d138b15701803cc9798d00964703e17e8176607` | 14 |
 
 ## S7  Admission: the roster grows, the new member can act
 
@@ -333,25 +316,25 @@
 - ✔ the roster now has six members including O
 - ✔ O, now a member, can file a motion
 - ✔ O withdraws it
-- ✘ after S7: contract is solvent (balance >= books) — balance=61000000000000000 books=62000000000000000
+- ✔ after S7: contract is solvent (balance >= books)
 - ✔ after S7: ledger balance equals the chain balance
 - ✔ after S7: pull-payment total equals the sum of member balances
 - · AI (strict) touched [] -> tier 2
-- · waiting for chain time 1793551894 (challenge window)
+- · waiting for chain time 1795251126 (challenge window)
 
 | tx | result | hash | s |
 |---|---|---|---|
-| F0.file_admission | ok | `0x46d7db4196c9e7fe22f95b76d69917bdcc43c9cb6afa29da0bb3cb31f2447529` | 0 |
-| F1.classify | ok | `0x58fcef3f45e3e257d3a3ec2d2c71ff02030e6bfefc7ec1ed0811ce78262cb7ee` | 0 |
-| F0.vote(yes) | ok | `0x804f7ee203ebcf3638ede73bd0dc6fdac5bfc15c7358ff361a82b7f375c16972` | 0 |
-| F1.vote(yes) | ok | `0xb8d41242cb669db5fdc921e780a1b3375ac6c23a7aaf497becf891f41aa696ad` | 0 |
-| F2.vote(yes) | ok | `0x2d98a593e81e5fe217b4f43a35171afee0a5ae1939ca33a17ea63c0dafeeb171` | 0 |
-| F3.vote(yes) | ok | `0x25ac59f50ca70a18fd78a6cce70cfb3d9af3b0648faa3190132e4ef1909fbebc` | 0 |
-| F4.vote(yes) | ok | `0x6754e21e30e6901dfbf8387901569bffcb3458a6f355749be23a196a5d56d52e` | 0 |
-| F2.close_vote | ok | `0xbfb925c1eb25371e9e3a6e771c6caf139a9a62a0d47ac406f6ac18bd3d0d6a0c` | 0 |
-| F3.finalize | ok | `0x2898acb95ca0b3c956948d7e4982498743b472ec7c92772663361bda93d466c1` | 0 |
-| O.file_amendment | ok | `0xfd5c2837d02df0d127212cffee69b25e1ab2646a5a2030c37b0e63df702b5190` | 0 |
-| O.withdraw_motion | ok | `0x40549c09bccfb8310b93aa9b5672706320fc3676d97293f81e925e08ed045844` | 0 |
+| F0.file_admission | ok | `0x6d726f9b31bea231058e47365ab345d0073edb3cfc3b7b96bbe21cc5c5f630c9` | 14 |
+| F1.classify | ok | `0x8e6226b7290911312cb803bf116e89cd91ad50695e209177b84b610fc5322a8c` | 29 |
+| F0.vote(yes) | ok | `0xd83940c6842dcf6a1c7bb95aa2db820f1d70e3f3536a11e248f4a0c39f6f18dd` | 64 |
+| F1.vote(yes) | ok | `0x208a3eb35d9ff8af7a6cd24f03891c1bf941c173b8e445d787418b5477bf2749` | 66 |
+| F2.vote(yes) | ok | `0x7609a38261cbc1fc6bea5276c144f38bb53dcb48abe8dfbc4df0cd6bcf9a0237` | 69 |
+| F3.vote(yes) | ok | `0x64602a8efbef2fbff13b136930c9d8563a35762b33988fc7aca035bfb6ab137b` | 71 |
+| F4.vote(yes) | ok | `0xd0d7ac9e9108c2bb24ef4bbebf62cf4c75cbe306f04f634f6e959b11d5348e10` | 74 |
+| F2.close_vote | ok | `0xd693d8570144cc83769cb1c16cb0764eaee1e48163f4f7323757484bea5fdc2f` | 15 |
+| F3.finalize | ok | `0x8c1c4a6bc3b2a1fc406d283202ef63cb3935c71b753735073e4c5a170d9deb0f` | 28 |
+| O.file_amendment | ok | `0x5837880da08061fe585a1dc058a5fbb987e130d80ddf5f711214783a2e6f4af0` | 14 |
+| O.withdraw_motion | ok | `0x3a38c0808e20a0e56c78f92a9d7aaf1f90a4fc3f43799545abbd185fcd89fe92` | 14 |
 
 ## S8  Lapse: a motion nobody votes on forfeits its bond to the commons
 
@@ -365,16 +348,16 @@
 - ✔ motion LAPSED
 - ✔ its bond went to the treasury
 - ✔ the floor is free again
-- ✘ after S8: contract is solvent (balance >= books) — balance=65000000000000000 books=66000000000000000
+- ✔ after S8: contract is solvent (balance >= books)
 - ✔ after S8: ledger balance equals the chain balance
 - ✔ after S8: pull-payment total equals the sum of member balances
-- · waiting for chain time 1793552035 (voting window)
+- · waiting for chain time 1795251390 (voting window)
 
 | tx | result | hash | s |
 |---|---|---|---|
-| F2.file_amendment | ok | `0xa0272ce62cdf36f63af328b498c7c36d3d1382e6f4d453d69aa11fb409ba7cd5` | 0 |
-| F3.classify | ok | `0x81c3823e9ae690ae09231dd3c186e29bbbdf41672d83941257c725c22ba0536a` | 0 |
-| F4.close_vote | ok | `0x5470a4bfd15c69577f53b3c8883a1d2ec41a79cb4b51433a60e2c928d10ca341` | 0 |
+| F2.file_amendment | ok | `0x601aa48309ef5be750e2d9d628e1f7300dfb9e5736a10819698c693ddb090a4d` | 14 |
+| F3.classify | ok | `0x685b4606fd8dd2f93eedf5bcd383f5933c8d5c89c46cf6cc92fe32792a4113c0` | 29 |
+| F4.close_vote | ok | `0xf96f98633022dfc3c9e713f96c30149eed15008bdeabeed4b7be8b47ec03d68d` | 13 |
 
 ## Final reconciliation
 
@@ -415,9 +398,9 @@
 - ✔ every ENACTED/REJECTED motion obeys its threshold exactly (yes >= votes_needed <=> ENACTED)
 - ✔ every LAPSED motion had less than half the roster voting
 - ✔ F0 withdraws 0.004 GEN
-- ✔ F1 withdraws 0.002 GEN
+- ✔ F1 withdraws 0.004 GEN
 - ✔ F2 withdraws 0.01 GEN
-- ✔ F3 withdraws 0.01 GEN
+- ✔ F3 withdraws 0.004 GEN
 - ✔ O withdraws 0.004 GEN
 - ✔ final (ledger side): contract is solvent (balance >= books)
 - ✔ final (ledger side): ledger balance equals the chain balance
@@ -425,11 +408,11 @@
 
 | tx | result | hash | s |
 |---|---|---|---|
-| F0.withdraw (cleanup) | ok | `0x5ae4fd3ec57771cab38431681313b5247d38ab0c74700057bce2d91ad0bed8b2` | 0 |
-| F1.withdraw (cleanup) | ok | `0xc7e6736c7047300ceb34dc0ce1e6036c4db6f5406d6027885ac11e534d589d09` | 0 |
-| F2.withdraw (cleanup) | ok | `0x8421b20f0acec33e2cdb9a6de45e6c64f8a31d7676ea1f48e196f8db83e3e503` | 0 |
-| F3.withdraw (cleanup) | ok | `0x60d3109f271e6c88e31ee5995bdc25c3f5b9f7945c8bbdaabab29858cef23298` | 0 |
-| O.withdraw (cleanup) | ok | `0xe52b2eae48c67c0b28dbf4f67640b2662a3e188a0c73d1f6430ffb2471d54b9f` | 0 |
+| F0.withdraw (cleanup) | ok | `0xdb8a50a6d8c158ea831df90e0aa2da41ac743d200d7c8d9bd4f1117633203622` | 14 |
+| F1.withdraw (cleanup) | ok | `0xabec2b24820dc6c2fa7663657246b9c6d1f209d87c5a9ecdb97e96eb5fd1c451` | 14 |
+| F2.withdraw (cleanup) | ok | `0x5d4b6cc5102083cc2d1bb4d5a288b321c1e5d1764b1d24461821d2d548c5a86e` | 14 |
+| F3.withdraw (cleanup) | ok | `0xb3f91caba282ff1c0156576e60eeca334b65b8e7b85f86b1438779872c743893` | 14 |
+| O.withdraw (cleanup) | ok | `0x5b88130d9d6a8ab0dfccdb2fe9297835b80bd2b05429bdc3bea2d5fb0cc98cf0` | 14 |
 
 ## Whole-run conservation of funds (waits for delayed payouts)
 
@@ -440,9 +423,9 @@
 - ✔ F4: balance equals start - attached + withdrawn (exact)
 - ✔ O: balance equals start - attached + withdrawn (exact)
 - ✔ G: balance equals start - attached + withdrawn (exact)
-- ✘ final: contract is solvent (balance >= books) — balance=35000000000000000 books=36000000000000000
+- ✔ final: contract is solvent (balance >= books)
 - ✔ final: ledger balance equals the chain balance
 - ✔ final: pull-payment total equals the sum of member balances
-- ✘ final: books fully settled (balance == treasury + escrow + claimable) — balance=35000000000000000 books=36000000000000000 (emitted transfers execute at finalization)
-- ✘ after every payout the contract holds exactly the commons treasury — balance=35000000000000000 treasury=36000000000000000 claimable=0
-- · delayed-payout sweep took 5 s
+- ✔ final: books fully settled (balance == treasury + escrow + claimable)
+- ✔ after every payout the contract holds exactly the commons treasury
+- · delayed-payout sweep took 175 s
