@@ -150,10 +150,22 @@ async function main() {
   }
 
   const expectRevert = async (name, fn, args, match, { value = 0n } = {}) => {
+    // Measure what THIS reverted transaction leaves in the contract: Studionet may keep the value of a
+    // failed call. It belongs to whoever sent it, so the whole-run conservation check charges it to
+    // that sender (blaming one fixed account moved the difference between two accounts).
+    const held0 = value > 0n ? await chain.balance(address) : 0n;
     const out = await send(name, fn, args, { value, label: `${name}.${fn} (must revert)` });
     const reverted = !out.ok && (out.kind === 'EXEC_ERROR' || out.kind === 'SUBMIT_ERROR');
     report.check(`${fn} by ${name} reverts`, reverted, `${out.kind} ${out.errorText ?? ''}`);
-    if (reverted && out.errorText) report.check(`  revert reason mentions "${match}"`, out.errorText.includes(match), out.errorText, { soft: true });
+    if (reverted && out.errorText) report.check(`  revert reason mentions \"${match}\"`, out.errorText.includes(match), out.errorText, { soft: true });
+    if (value > 0n) {
+      const kept = (await chain.balance(address)) - held0;
+      if (kept > 0n) {
+        orphan += kept;
+        spent[name] += kept;
+        report.note(`Studionet kept ${kept} wei of the reverted ${name}.${fn}; charged to ${name} in the final conservation check`);
+      }
+    }
     return out;
   };
 
@@ -342,12 +354,8 @@ async function main() {
     const asm1 = await getAsm();
     report.check('no motion was created by the failed attempts', asm1.motion_count === 0);
     const bal1 = await chain.balance(address);
-    orphan = bal1;   // anything left over would be value kept by failed transactions
     report.check('failed transactions did not leave value in the contract', bal1 === 0n, `contract holds ${bal1} wei`, { soft: true });
-    if (orphan !== 0n) {
-      report.note(`Studionet kept ${orphan} wei from reverted transactions; later balance checks subtract this baseline`);
-      spent.F1 += orphan;
-    }
+    report.check('every wei left by failed transactions was attributed to its sender', bal1 === orphan, `contract holds ${bal1} wei, attributed ${orphan}`);
 
     // -------------------------------------------------------------------------------- //
     report.section('S2  Treasury donation and bond withdrawal');
